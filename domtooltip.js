@@ -1,5 +1,16 @@
 var bounding_boxes = {}
 var tooltipTimer = null;
+var currentTooltipTarget = null;
+var pointermovelistener = null;
+
+
+function onPointerMove(e) {
+    if (!currentTooltipTarget) return;
+    if (!currentTooltipTarget.contains(e.target)) {
+        hide_tooltip({ target: currentTooltipTarget });
+        currentTooltipTarget = null;
+    }
+}
 
 document.addEventListener('mouseenter', (e) => {
     if (!(e.target instanceof Element)) return; 
@@ -13,6 +24,8 @@ document.addEventListener('mouseenter', (e) => {
 
     const target = e.target.closest('[data-tooltip]');
     if (target) {
+        document.querySelector('#dom_tooltip')?.remove();
+        currentTooltipTarget = target;
         const tip = target.getAttribute('data-tooltip');
         show_tooltip(tip, e);
         tooltipTimer = setTimeout(() => {
@@ -21,6 +34,7 @@ document.addEventListener('mouseenter', (e) => {
                 tipEl.style.opacity = '0.85';
             }
         }, 1000);
+        document.addEventListener('pointermove', onPointerMove);
     }
 }, true);
 
@@ -30,6 +44,7 @@ document.addEventListener('mouseleave', (e) => {
     if (target) {
         clearTimeout(tooltipTimer);
         hide_tooltip(e);
+        currentTooltipTarget = null;
     }
 }, true);
 
@@ -72,8 +87,12 @@ function pre_render_tooltip(tip){
 }
 
 function hide_tooltip(e){
-    document.querySelector('#dom_tooltip').remove()
-    e.target.removeEventListener('mousemove', follow_pointer)
+    const tip = document.querySelector('#dom_tooltip');
+    if (tip) tip.remove();
+    if (e?.target instanceof Element) {
+        e.target.removeEventListener('mousemove', follow_pointer);
+    }
+    document.removeEventListener('pointermove', onPointerMove);
 }
 
 
